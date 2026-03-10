@@ -1,24 +1,34 @@
-const WebSocket = require("ws");
-const http = require("http");
-const PORT = process.env.PORT || 8080;
+const WebSocket = require('ws');
+const http = require('http');
+
+// Render REQUIRES you to use process.env.PORT
+const port = process.env.PORT || 8080;
+
+// Create a basic server so Render's health check passes
 const server = http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end("WebSocket Server is Running");
+  res.writeHead(200);
+  res.end('Server is Live');
 });
+
 const wss = new WebSocket.Server({ server });
-wss.on("connection", socket => {
-    console.log("Client Connected");
-    socket.on("message", message => {
-        console.log("Received:", message.toString());
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message.toString());
-            }
-        });
-    });
+
+wss.on('connection', (ws) => {
+  console.log('New client connected');
+
+  ws.on('message', (message) => {
+    console.log('Received:', message.toString());
     
-    socket.on("close", () => console.log("Client Disconnected"));
+    // Send to all connected clients (ESP32 and Mobile)
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message.toString());
+      }
+    });
+  });
+
+  ws.on('close', () => console.log('Client disconnected'));
 });
-server.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+
+server.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
